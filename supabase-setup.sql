@@ -66,7 +66,7 @@ alter table public.bingo_admin_config enable row level security;
 revoke all on public.bingo_admin_config from anon, authenticated;
 
 insert into public.bingo_admin_config(singleton,password_hash)
-values (true, crypt('MEIN-SICHERES-ADMIN-PASSWORT', gen_salt('bf')))
+values (true, crypt('Michiabend', gen_salt('bf')))
 on conflict (singleton) do update set password_hash=excluded.password_hash;
 
 -- Nur diese Funktion darf die globale Auswertung lesen.
