@@ -25,7 +25,13 @@
     .grid{display:grid;gap:14px;margin-top:14px}.target{padding:16px;background:rgba(255,255,255,.74);transition:.2s}.target.complete{border-color:rgba(73,99,79,.4);background:rgba(73,99,79,.08)}
     .target-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px}.counter{color:var(--muted);font-size:.84rem;font-weight:800}.words{display:grid;gap:9px}
     .row{display:grid;grid-template-columns:34px 1fr;gap:9px;align-items:center;border:1px solid rgba(75,31,47,.1);border-radius:14px;padding:7px 10px 7px 8px;background:rgba(255,255,255,.76)}
-    .row.checked{opacity:.62}.row.checked .word{text-decoration:line-through}.check{appearance:none;width:25px;height:25px;border:1.5px solid rgba(75,31,47,.35);border-radius:8px;background:#fff;display:grid;place-items:center;margin:0}
+    .row.checked{opacity:.62}.row.checked .word{text-decoration:line-through}
+    .word-wrap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
+    .lock-btn{border:0;border-radius:999px;padding:8px 11px;background:var(--wine);color:#fff;font-size:.78rem;font-weight:800;white-space:nowrap}
+    .lock-btn:disabled{background:rgba(75,31,47,.10);color:var(--muted);cursor:default}
+    .row.locked .word{color:var(--ink)}
+    .check:disabled{opacity:.35;cursor:not-allowed}
+    .check{appearance:none;width:25px;height:25px;border:1.5px solid rgba(75,31,47,.35);border-radius:8px;background:#fff;display:grid;place-items:center;margin:0}
     .check:checked{background:var(--wine);border-color:var(--wine)}.check:checked:after{content:"✓";color:#fff;font-weight:900}.word{width:100%;border:0;outline:0;background:transparent;color:var(--ink);padding:7px 0;min-width:0}
     .done{display:none;margin-top:11px;border-radius:14px;padding:11px;background:var(--ok);color:#fff;text-align:center;font-weight:800}.complete .done{display:block}
     .note{text-align:center;color:var(--muted);font-size:.82rem;line-height:1.5;margin:18px auto 0;max-width:670px}.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;background:#25191d;color:#fff;border-radius:99px;padding:11px 16px;font-weight:800;box-shadow:var(--shadow);transition:.2s;z-index:30;pointer-events:none;text-align:center;max-width:calc(100vw - 30px)}.toast.show{opacity:1;transform:translate(-50%,0)}
@@ -41,7 +47,6 @@
     <p>Fünf Vorhersagen pro Person. Sobald ein Satz fällt, wird abgehakt. Lokal gespeichert und – bei Empfang – anonym in die gemeinsame Auswertung übertragen.</p>
     <div class="toolbar">
       <button id="change" class="btn primary hidden">Spieler wechseln</button>
-      <button id="reset" class="btn ghost hidden">Meinen Stand löschen</button>
     </div>
   </section>
 
@@ -74,12 +79,12 @@ const cap=s=>s.replace(/\b\w/g,c=>c.toUpperCase());
 function load(){try{return JSON.parse(localStorage.getItem(LOCAL_KEY))||{player:null,games:{},clientId:crypto.randomUUID()}}catch{return{player:null,games:{},clientId:crypto.randomUUID()}}}
 if(!state.clientId)state.clientId=crypto.randomUUID();
 function save(){localStorage.setItem(LOCAL_KEY,JSON.stringify(state))}
-function ensure(p){state.games[p]??={};PEOPLE.filter(x=>x!==p).forEach(t=>state.games[p][t]??=Array.from({length:5},()=>({text:"",checked:false})));save()}
+function ensure(p){state.games[p]??={};PEOPLE.filter(x=>x!==p).forEach(t=>state.games[p][t]??=Array.from({length:5},()=>({text:"",checked:false,locked:false}));state.games[p][t].forEach(x=>{if(typeof x.locked!=="boolean")x.locked=Boolean(x.text&&x.text.trim())});save()}
 function configured(){return window.APP_CONFIG&&APP_CONFIG.SUPABASE_URL&&!APP_CONFIG.SUPABASE_URL.includes("DEIN-")&&APP_CONFIG.SUPABASE_KEY&&!APP_CONFIG.SUPABASE_KEY.includes("DEIN-")}
 function renderPlayers(){$("players").innerHTML="";PEOPLE.forEach(n=>{const b=document.createElement("button");b.className="person";b.innerHTML=`<strong>${cap(n)}</strong><span>Als Spieler auswählen</span>`;b.onclick=()=>{state.player=n;ensure(n);save();render();syncAll()};$("players").appendChild(b)})}
 function render(){
-  if(!state.player){$("setup").classList.remove("hidden");$("game").classList.add("hidden");$("change").classList.add("hidden");$("reset").classList.add("hidden");renderPlayers();return}
-  ensure(state.player);$("setup").classList.add("hidden");$("game").classList.remove("hidden");$("change").classList.remove("hidden");$("reset").classList.remove("hidden");$("title").textContent=cap(state.player)+"s Bingo";renderTargets();progress();syncLabel();
+  if(!state.player){$("setup").classList.remove("hidden");$("game").classList.add("hidden");$("change").classList.add("hidden");renderPlayers();return}
+  ensure(state.player);$("setup").classList.add("hidden");$("game").classList.remove("hidden");$("change").classList.remove("hidden");$("title").textContent=cap(state.player)+"s Bingo";renderTargets();progress();syncLabel();
 }
 function renderTargets(){
   $("targets").innerHTML="";
@@ -88,11 +93,41 @@ function renderTargets(){
     card.innerHTML=`<div class="target-head"><h3>${cap(target)}</h3><span class="counter">0 / 5</span></div><div class="words"></div><div class="done">${cap(target)} wurde vollständig entschlüsselt</div>`;
     state.games[state.player][target].forEach((item,slot)=>{
       const row=document.createElement("label");row.className="row"+(item.checked?" checked":"");
-      row.innerHTML=`<input class="check" type="checkbox" ${item.checked?"checked":""}><input class="word" maxlength="80" placeholder="z. B. „Ganz ehrlich …“" value="${esc(item.text)}">`;
-      const c=row.querySelector(".check"),i=row.querySelector(".word");
+      const locked = Boolean(item.locked || item.text.trim());
+      item.locked = locked;
+      row.innerHTML=`
+        <input class="check" type="checkbox" ${item.checked?"checked":""} ${locked?"":"disabled"} aria-label="Vorhersage abhaken">
+        <div class="word-wrap">
+          <input class="word" maxlength="80" placeholder="z. B. „Ganz ehrlich …“" value="${esc(item.text)}" ${locked?"readonly":""}>
+          <button class="lock-btn" type="button">${locked?"Gespeichert":"Übernehmen"}</button>
+        </div>`;
+      const c=row.querySelector(".check"),i=row.querySelector(".word"),lock=row.querySelector(".lock-btn");
+
+      function applyLockedState(){
+        const isLocked=Boolean(item.locked);
+        i.readOnly=isLocked;
+        c.disabled=!isLocked;
+        lock.textContent=isLocked?"Gespeichert":"Übernehmen";
+        lock.disabled=isLocked;
+        row.classList.toggle("locked",isLocked);
+      }
+
+      lock.onclick=()=>{
+        const value=i.value.trim();
+        if(!value){i.focus();toast("Bitte zuerst ein Wort oder einen Satz eingeben.");return}
+        item.text=value;
+        item.locked=true;
+        save();
+        applyLockedState();
+        syncSlot(target,slot);
+        toast("Vorhersage gespeichert.");
+      };
+
+      i.oninput=()=>{if(!item.locked){item.text=i.value;save()}};
+      i.onkeydown=e=>{if(e.key==="Enter"&&!item.locked){e.preventDefault();lock.click()}};
+
       c.onchange=()=>{const before=complete(target);item.checked=c.checked;row.classList.toggle("checked",item.checked);save();updateCard(card,target);progress();queueSync(target,slot);if(!before&&complete(target))bingo(target)};
-      i.oninput=()=>{item.text=i.value;save();queueSync(target,slot)};
-      i.onblur=()=>syncSlot(target,slot);
+      applyLockedState();
       card.querySelector(".words").appendChild(row);
     });
     $("targets").appendChild(card);updateCard(card,target)
@@ -129,10 +164,10 @@ function syncLabel(success){
   if(success===false){el.classList.remove("online");text.textContent="Synchronisierung fehlgeschlagen – lokal gesichert";return}
   el.classList.add("online");text.textContent=success?"Mit gemeinsamer Auswertung synchronisiert":"Online – Änderungen werden synchronisiert"
 }
+function toast(message){const el=$("toast");el.textContent=message;el.classList.add("show");clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove("show"),2200)}
 function bingo(t){$("modalTitle").textContent=cap(t)+"-Bingo!";$("modalText").textContent=`Alle fünf Vorhersagen für ${cap(t)} sind eingetroffen. Offiziell vollkommen berechenbar.`;$("modal").classList.remove("hidden")}
 $("close").onclick=()=>$("modal").classList.add("hidden");
 $("change").onclick=()=>{state.player=null;save();render()};
-$("reset").onclick=()=>{if(confirm("Deinen lokalen Spielstand wirklich löschen?")){delete state.games[state.player];ensure(state.player);render();syncAll()}};
 window.addEventListener("online",()=>{syncLabel();syncAll()});window.addEventListener("offline",()=>syncLabel());
 render();if(state.player)syncAll();
 </script>
