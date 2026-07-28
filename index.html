@@ -18,8 +18,8 @@
     .panel,.target{background:var(--paper);border:1px solid rgba(255,255,255,.75);border-radius:22px;box-shadow:0 12px 30px rgba(47,21,30,.08);backdrop-filter:blur(14px)}
     .panel{padding:19px;margin-top:15px}.hidden{display:none!important}.head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.head h2,.target h3{font:500 1.5rem Georgia,serif;margin:0;text-transform:capitalize}
     .head p{margin:5px 0 0;color:var(--muted);font-size:.92rem;line-height:1.45}.badge{white-space:nowrap;border-radius:999px;padding:7px 10px;background:rgba(180,138,76,.14);color:#735322;font-size:.78rem;font-weight:800}
-    .players{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:11px;margin-top:15px}.person{border:1px solid var(--line);border-radius:18px;padding:16px;background:rgba(255,255,255,.7);text-align:left;color:var(--ink)}
-    .person strong{display:block;font:500 1.2rem Georgia,serif;text-transform:capitalize}.person span{display:block;color:var(--muted);font-size:.88rem;margin-top:5px}
+    .players{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:14px}.person{text-align:left;border:1px solid var(--line);border-radius:18px;padding:16px;background:rgba(255,255,255,.68);color:var(--ink);min-height:86px;transition:border-color .15s ease,transform .15s ease,background .15s ease}
+    .person:hover{transform:translateY(-1px);border-color:rgba(75,31,47,.3);background:#fff}.person strong{display:block;font:500 1.2rem Georgia,serif;text-transform:capitalize}.person span{display:block;color:var(--muted);font-size:.88rem;margin-top:5px}
     .status{display:flex;gap:8px;align-items:center;margin-top:12px;color:var(--muted);font-size:.84rem}.dot{width:8px;height:8px;border-radius:50%;background:var(--gold)}.status.online .dot{background:var(--ok)}
     .progress{height:10px;background:rgba(75,31,47,.08);border-radius:99px;overflow:hidden;margin-top:13px}.bar{height:100%;width:0;background:linear-gradient(90deg,var(--wine2),var(--gold));transition:width .2s}
     .grid{display:grid;gap:14px;margin-top:14px}.target{padding:16px;background:rgba(255,255,255,.74);transition:.2s}.target.complete{border-color:rgba(73,99,79,.4);background:rgba(73,99,79,.08)}
@@ -79,16 +79,32 @@ const cap=s=>s.replace(/\b\w/g,c=>c.toUpperCase());
 function load(){try{return JSON.parse(localStorage.getItem(LOCAL_KEY))||{player:null,games:{},clientId:crypto.randomUUID()}}catch{return{player:null,games:{},clientId:crypto.randomUUID()}}}
 if(!state.clientId)state.clientId=crypto.randomUUID();
 function save(){localStorage.setItem(LOCAL_KEY,JSON.stringify(state))}
-function ensure(p){state.games[p]??={};PEOPLE.filter(x=>x!==p).forEach(t=>state.games[p][t]??=Array.from({length:5},()=>({text:"",checked:false,locked:false}));state.games[p][t].forEach(x=>{if(typeof x.locked!=="boolean")x.locked=Boolean(x.text&&x.text.trim())});save()}
+function ensure(p){state.games[p]??={};delete state.games[p][p];PEOPLE.filter(x=>x !== p).forEach(t=>state.games[p][t]??=Array.from({length:5},()=>({text:"",checked:false,locked:false}));state.games[p][t].forEach(x=>{if(typeof x.locked!=="boolean")x.locked=Boolean(x.text&&x.text.trim())});save()}
 function configured(){return window.APP_CONFIG&&APP_CONFIG.SUPABASE_URL&&!APP_CONFIG.SUPABASE_URL.includes("DEIN-")&&APP_CONFIG.SUPABASE_KEY&&!APP_CONFIG.SUPABASE_KEY.includes("DEIN-")}
-function renderPlayers(){$("players").innerHTML="";PEOPLE.forEach(n=>{const b=document.createElement("button");b.className="person";b.innerHTML=`<strong>${cap(n)}</strong><span>Als Spieler auswählen</span>`;b.onclick=()=>{state.player=n;ensure(n);save();render();syncAll()};$("players").appendChild(b)})}
+function renderPlayers(){
+  $("players").innerHTML="";
+  PEOPLE.forEach(name=>{
+    const button=document.createElement("button");
+    button.type="button";
+    button.className="person";
+    button.innerHTML=`<strong>${cap(name)}</strong><span>Als Spieler auswählen</span>`;
+    button.addEventListener("click",()=>{
+      state.player=name;
+      ensure(name);
+      save();
+      render();
+      syncAll();
+    });
+    $("players").appendChild(button);
+  });
+}
 function render(){
   if(!state.player){$("setup").classList.remove("hidden");$("game").classList.add("hidden");$("change").classList.add("hidden");renderPlayers();return}
   ensure(state.player);$("setup").classList.add("hidden");$("game").classList.remove("hidden");$("change").classList.remove("hidden");$("title").textContent=cap(state.player)+"s Bingo";renderTargets();progress();syncLabel();
 }
 function renderTargets(){
   $("targets").innerHTML="";
-  PEOPLE.filter(t=>t!==state.player).forEach(target=>{
+  PEOPLE.filter(target=>target !== state.player).forEach(target=>{
     const card=document.createElement("section");card.className="target";
     card.innerHTML=`<div class="target-head"><h3>${cap(target)}</h3><span class="counter">0 / 5</span></div><div class="words"></div><div class="done">${cap(target)} wurde vollständig entschlüsselt</div>`;
     state.games[state.player][target].forEach((item,slot)=>{
@@ -135,7 +151,7 @@ function renderTargets(){
 }
 function complete(t){return state.games[state.player][t].every(x=>x.checked)}
 function updateCard(card,t){const n=state.games[state.player][t].filter(x=>x.checked).length;card.querySelector(".counter").textContent=n+" / 5";card.classList.toggle("complete",n===5)}
-function progress(){const a=PEOPLE.filter(t=>t!==state.player).flatMap(t=>state.games[state.player][t]);const n=a.filter(x=>x.checked).length;$("total").textContent=`${n} / ${a.length}`;$("bar").style.width=(n/a.length*100)+"%"}
+function progress(){const a=PEOPLE.filter(target=>target !== state.player).flatMap(t=>state.games[state.player][t]);const n=a.filter(x=>x.checked).length;$("total").textContent=`${n} / ${a.length}`;$("bar").style.width=(n/a.length*100)+"%"}
 function queueSync(target,slot){const key=target+"-"+slot;clearTimeout(pending.get(key));pending.set(key,setTimeout(()=>syncSlot(target,slot),700))}
 async function syncSlot(target,slot){
   if(!configured()||!navigator.onLine){syncLabel();return}
@@ -156,7 +172,7 @@ async function syncSlot(target,slot){
     if(!r.ok)throw new Error(await r.text());syncLabel(true)
   }catch(e){console.warn(e);syncLabel(false)}
 }
-async function syncAll(){if(!state.player)return;for(const target of PEOPLE.filter(t=>t!==state.player))for(let slot=0;slot<5;slot++)await syncSlot(target,slot)}
+async function syncAll(){if(!state.player)return;for(const target of PEOPLE.filter(target=>target !== state.player))for(let slot=0;slot<5;slot++)await syncSlot(target,slot)}
 function syncLabel(success){
   const el=$("syncStatus"),text=el.querySelector("span:last-child");
   if(!configured()){el.classList.remove("online");text.textContent="Supabase noch nicht konfiguriert – nur lokal gespeichert";return}
