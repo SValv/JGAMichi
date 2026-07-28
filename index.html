@@ -128,7 +128,7 @@ function renderTargets(){
       row.innerHTML=`
         <input class="check" type="checkbox" ${item.checked?"checked":""} ${locked?"":"disabled"} aria-label="Vorhersage abhaken">
         <div class="word-wrap">
-          <textarea class="word" maxlength="200" rows="1" placeholder="z. B. „Ganz ehrlich …“" ${locked?"readonly":""}>${esc(item.text)}</textarea>
+          <textarea class="word" maxlength="200" rows="1" placeholder="z. B. „Lecker Bierchen“" ${locked?"readonly":""}>${esc(item.text)}</textarea>
           <button class="lock-btn" type="button" aria-label="${locked?"Vorhersage gespeichert":"Vorhersage speichern"}" title="${locked?"Gespeichert":"Speichern"}">${locked?"✓":"✓"}</button>
         </div>`;
       const c=row.querySelector(".check"),i=row.querySelector(".word"),lock=row.querySelector(".lock-btn");
@@ -173,11 +173,14 @@ function renderTargets(){
 
       c.onchange=()=>{const before=complete(target);item.checked=c.checked;row.classList.toggle("checked",item.checked);save();updateCard(card,target);progress();queueSync(target,slot);if(!before&&complete(target))bingo(target)};
       applyLockedState();
-      autoSizeWordField(i);
       card.querySelector(".words").appendChild(row);
+      requestAnimationFrame(()=>autoSizeWordField(i));
     });
     $("targets").appendChild(card);updateCard(card,target)
-  })
+  });
+  requestAnimationFrame(()=>{
+    document.querySelectorAll(".word").forEach(autoSizeWordField);
+  });
 }
 function complete(t){return state.games[state.player][t].every(x=>x.checked)}
 function updateCard(card,t){const n=state.games[state.player][t].filter(x=>x.checked).length;card.querySelector(".counter").textContent=n+" / 5";card.classList.toggle("complete",n===5)}
