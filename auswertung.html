@@ -37,7 +37,21 @@ async function load(){
    card.innerHTML=`<h2>${cap(esc(target))}</h2>`+rows.map(x=>`<div class="word"><span>${esc(x.word)}</span><span class="count">${x.mentions}×</span></div>`).join("");
    $("results").appendChild(card)
   })
- }catch(e){console.error(e);fail("Auswertung konnte nicht geladen werden. Passwort und Supabase-Konfiguration prüfen.")}
+ }catch(e){
+   console.error(e);
+   const details = String(e && e.message ? e.message : e);
+   let friendly = "Auswertung konnte nicht geladen werden.";
+   if(details.includes("invalid admin password")) {
+     friendly = "Das Admin-Passwort ist nicht korrekt.";
+   } else if(details.includes("Could not find the function") || details.includes("PGRST202")) {
+     friendly = "Die Funktion get_bingo_summary wurde in Supabase nicht gefunden. Bitte das Setup-SQL erneut vollständig ausführen.";
+   } else if(details.includes("Invalid API key") || details.includes("No API key")) {
+     friendly = "Der Supabase-Key in config.js ist ungültig oder fehlt.";
+   } else if(details.includes("Failed to fetch")) {
+     friendly = "Supabase konnte nicht erreicht werden. Prüfe die Projekt-URL in config.js und deine Internetverbindung.";
+   }
+   fail(friendly + "\n\nTechnische Meldung: " + details);
+ }
 }
-function fail(t){$("message").className="error";$("message").textContent=t}
+function fail(t){$("message").className="error";$("message").style.whiteSpace="pre-wrap";$("message").textContent=t}
 </script></body></html>
