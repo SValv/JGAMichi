@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bingo-Auswertung</title>
+<style>
+:root{--wine:#4b1f2f;--cream:#f7f0e5;--paper:#fffaf3;--ink:#281d20;--muted:#786a6d;--gold:#b48a4c}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#f8f2e8,#eadcca);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+main{width:min(960px,100%);margin:auto;padding:24px 16px 50px}header{border-radius:28px;padding:30px;color:#fff;background:linear-gradient(135deg,var(--wine),#35151f)}
+h1,h2{font-family:Georgia,serif;font-weight:500}h1{font-size:clamp(2rem,7vw,3.8rem);margin:0}header p{color:rgba(255,255,255,.75)}
+.login,.card{background:rgba(255,250,243,.95);border-radius:20px;padding:18px;margin-top:15px;box-shadow:0 12px 28px rgba(47,21,30,.09)}
+label{display:block;font-weight:800;margin-bottom:7px}input{width:100%;border:1px solid rgba(75,31,47,.2);border-radius:13px;padding:12px;background:#fff}
+button{border:0;border-radius:999px;padding:11px 16px;background:var(--wine);color:#fff;font-weight:800;margin-top:11px;cursor:pointer}
+.grid{display:grid;gap:14px;margin-top:15px}.word{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid rgba(75,31,47,.1)}.word:last-child{border:0}.count{color:#765624;font-weight:900}.muted{color:var(--muted)}.error{color:#8b3944;font-weight:700}
+@media(min-width:700px){.grid{grid-template-columns:1fr 1fr}header{padding:38px}}
+</style></head>
+<body><main>
+<header><div style="text-transform:uppercase;letter-spacing:.16em;font-size:.72rem;opacity:.72">Nur für die Spielleitung</div><h1>Globale Auswertung</h1><p>Alle eingetragenen Wörter, gruppiert nach Zielperson und Häufigkeit.</p></header>
+<section class="login"><label for="password">Admin-Passwort</label><input id="password" type="password" autocomplete="current-password"><button id="load">Auswertung laden</button><p id="message" class="muted">Das Passwort wird nicht gespeichert.</p></section>
+<div id="results" class="grid"></div>
+</main>
+<script src="config.js"></script>
+<script>
+const $=id=>document.getElementById(id),cap=s=>s.replace(/\b\w/g,c=>c.toUpperCase()),esc=s=>String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+$("load").onclick=load;$("password").addEventListener("keydown",e=>{if(e.key==="Enter")load()});
+async function load(){
+ const pw=$("password").value;$("message").className="muted";$("message").textContent="Lade …";$("results").innerHTML="";
+ if(!pw)return fail("Bitte das Admin-Passwort eingeben.");
+ try{
+  const r=await fetch(`${APP_CONFIG.SUPABASE_URL}/rest/v1/rpc/get_bingo_summary`,{method:"POST",headers:{"apikey":APP_CONFIG.SUPABASE_KEY,"Authorization":"Bearer "+APP_CONFIG.SUPABASE_KEY,"Content-Type":"application/json"},body:JSON.stringify({admin_password:pw})});
+  if(!r.ok)throw new Error(await r.text());const data=await r.json();
+  if(!data.length){$("message").textContent="Noch keine Wörter gespeichert.";return}
+  $("message").textContent=`${data.reduce((a,x)=>a+Number(x.mentions),0)} Nennungen geladen.`;
+  const groups=data.reduce((acc,x)=>{(acc[x.target]??=[]).push(x);return acc},{});
+  Object.entries(groups).forEach(([target,rows])=>{
+   const card=document.createElement("section");card.className="card";
+   card.innerHTML=`<h2>${cap(esc(target))}</h2>`+rows.map(x=>`<div class="word"><span>${esc(x.word)}</span><span class="count">${x.mentions}×</span></div>`).join("");
+   $("results").appendChild(card)
+  })
+ }catch(e){console.error(e);fail("Auswertung konnte nicht geladen werden. Passwort und Supabase-Konfiguration prüfen.")}
+}
+function fail(t){$("message").className="error";$("message").textContent=t}
+</script></body></html>

@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#4b1f2f">
+  <title>Weinwochenende – Bullshit-Bingo</title>
+  <style>
+    :root{--wine:#4b1f2f;--wine2:#71364c;--cream:#f7f0e5;--paper:rgba(255,252,246,.94);--ink:#261b1e;--muted:#77676c;--gold:#b48a4c;--line:rgba(75,31,47,.14);--ok:#49634f;--shadow:0 18px 46px rgba(47,21,30,.13)}
+    *{box-sizing:border-box}html{min-height:100%;background:radial-gradient(circle at top left,rgba(180,138,76,.2),transparent 30rem),linear-gradient(145deg,#f8f2e8,#eadcca)}
+    body{margin:0;color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+    button,input{font:inherit}button{cursor:pointer}.shell{width:min(980px,100%);margin:auto;padding:20px 16px calc(34px + env(safe-area-inset-bottom))}
+    .hero{position:relative;overflow:hidden;border-radius:30px;padding:30px 24px;color:#fff;background:radial-gradient(circle at 90% 5%,rgba(255,255,255,.13),transparent 18rem),linear-gradient(135deg,var(--wine),#34141f);box-shadow:var(--shadow)}
+    .hero:after{content:"🍇";position:absolute;right:18px;bottom:-27px;font-size:116px;opacity:.09;transform:rotate(-12deg)}
+    .eyebrow{text-transform:uppercase;letter-spacing:.18em;font-size:.7rem;font-weight:800;opacity:.72}.hero h1{font:500 clamp(2.1rem,8vw,4rem)/1.05 Georgia,serif;margin:8px 0}
+    .hero p{max-width:650px;color:rgba(255,255,255,.78);line-height:1.55}.toolbar{display:flex;gap:9px;flex-wrap:wrap;position:relative;z-index:1;margin-top:18px}
+    .btn{border:0;border-radius:999px;padding:11px 16px;font-weight:800}.primary{background:var(--cream);color:var(--wine)}.ghost{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.22)}
+    .panel,.target{background:var(--paper);border:1px solid rgba(255,255,255,.75);border-radius:22px;box-shadow:0 12px 30px rgba(47,21,30,.08);backdrop-filter:blur(14px)}
+    .panel{padding:19px;margin-top:15px}.hidden{display:none!important}.head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.head h2,.target h3{font:500 1.5rem Georgia,serif;margin:0;text-transform:capitalize}
+    .head p{margin:5px 0 0;color:var(--muted);font-size:.92rem;line-height:1.45}.badge{white-space:nowrap;border-radius:999px;padding:7px 10px;background:rgba(180,138,76,.14);color:#735322;font-size:.78rem;font-weight:800}
+    .players{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:11px;margin-top:15px}.person{border:1px solid var(--line);border-radius:18px;padding:16px;background:rgba(255,255,255,.7);text-align:left;color:var(--ink)}
+    .person strong{display:block;font:500 1.2rem Georgia,serif;text-transform:capitalize}.person span{display:block;color:var(--muted);font-size:.88rem;margin-top:5px}
+    .status{display:flex;gap:8px;align-items:center;margin-top:12px;color:var(--muted);font-size:.84rem}.dot{width:8px;height:8px;border-radius:50%;background:var(--gold)}.status.online .dot{background:var(--ok)}
+    .progress{height:10px;background:rgba(75,31,47,.08);border-radius:99px;overflow:hidden;margin-top:13px}.bar{height:100%;width:0;background:linear-gradient(90deg,var(--wine2),var(--gold));transition:width .2s}
+    .grid{display:grid;gap:14px;margin-top:14px}.target{padding:16px;background:rgba(255,255,255,.74);transition:.2s}.target.complete{border-color:rgba(73,99,79,.4);background:rgba(73,99,79,.08)}
+    .target-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px}.counter{color:var(--muted);font-size:.84rem;font-weight:800}.words{display:grid;gap:9px}
+    .row{display:grid;grid-template-columns:34px 1fr;gap:9px;align-items:center;border:1px solid rgba(75,31,47,.1);border-radius:14px;padding:7px 10px 7px 8px;background:rgba(255,255,255,.76)}
+    .row.checked{opacity:.62}.row.checked .word{text-decoration:line-through}.check{appearance:none;width:25px;height:25px;border:1.5px solid rgba(75,31,47,.35);border-radius:8px;background:#fff;display:grid;place-items:center;margin:0}
+    .check:checked{background:var(--wine);border-color:var(--wine)}.check:checked:after{content:"✓";color:#fff;font-weight:900}.word{width:100%;border:0;outline:0;background:transparent;color:var(--ink);padding:7px 0;min-width:0}
+    .done{display:none;margin-top:11px;border-radius:14px;padding:11px;background:var(--ok);color:#fff;text-align:center;font-weight:800}.complete .done{display:block}
+    .note{text-align:center;color:var(--muted);font-size:.82rem;line-height:1.5;margin:18px auto 0;max-width:670px}.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;background:#25191d;color:#fff;border-radius:99px;padding:11px 16px;font-weight:800;box-shadow:var(--shadow);transition:.2s;z-index:30;pointer-events:none;text-align:center;max-width:calc(100vw - 30px)}.toast.show{opacity:1;transform:translate(-50%,0)}
+    .modal{position:fixed;inset:0;display:grid;place-items:center;padding:18px;background:rgba(31,16,21,.58);z-index:20}.modal-card{width:min(440px,100%);background:#fffaf3;border-radius:24px;padding:22px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.25)}.modal-card h2{font:500 1.8rem Georgia,serif;margin:6px}.modal-card p{color:var(--muted);line-height:1.5}.modal-card .btn{width:100%;background:var(--wine);color:#fff}
+    @media(min-width:700px){.shell{padding-top:30px}.hero{padding:38px 36px}.panel{padding:24px}.grid{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+<main class="shell">
+  <section class="hero">
+    <div class="eyebrow">Junggesellenabschied · Weingebiet Edition</div>
+    <h1>Bullshit-Bingo</h1>
+    <p>Fünf Vorhersagen pro Person. Sobald ein Satz fällt, wird abgehakt. Lokal gespeichert und – bei Empfang – anonym in die gemeinsame Auswertung übertragen.</p>
+    <div class="toolbar">
+      <button id="change" class="btn primary hidden">Spieler wechseln</button>
+      <button id="reset" class="btn ghost hidden">Meinen Stand löschen</button>
+    </div>
+  </section>
+
+  <section id="setup" class="panel">
+    <div class="head"><div><h2>Wer bist du?</h2><p>Dein Spielstand bleibt auf diesem Handy gespeichert.</p></div><span class="badge">7 Spieler</span></div>
+    <div id="players" class="players"></div>
+  </section>
+
+  <section id="game" class="hidden">
+    <div class="panel">
+      <div class="head"><div><h2 id="title">Dein Bingo</h2><p>Für jede andere Person fünf typische Wörter, Sätze oder Verhaltensweisen.</p></div><span id="total" class="badge">0 / 30</span></div>
+      <div class="progress"><div id="bar" class="bar"></div></div>
+      <div id="syncStatus" class="status"><span class="dot"></span><span>Nur lokal gespeichert</span></div>
+    </div>
+    <div id="targets" class="grid"></div>
+    <p class="note">Ein Handy-Neustart löscht nichts. Bei fehlendem Internet bleiben Änderungen lokal erhalten und werden später erneut synchronisiert. Nicht im Privatmodus öffnen.</p>
+  </section>
+</main>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div id="modal" class="modal hidden"><div class="modal-card"><div style="font-size:3rem">🍷</div><h2 id="modalTitle">Bingo!</h2><p id="modalText"></p><button id="close" class="btn">Sehr schön, weitertrinken</button></div></div>
+
+<script src="config.js"></script>
+<script>
+const PEOPLE=["florian","justin","sergey","michael","michael pufe","viktor","simon"];
+const LOCAL_KEY="wein-bullshit-bingo-v2";
+let state=load(), timer, pending=new Map();
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
+const cap=s=>s.replace(/\b\w/g,c=>c.toUpperCase());
+function load(){try{return JSON.parse(localStorage.getItem(LOCAL_KEY))||{player:null,games:{},clientId:crypto.randomUUID()}}catch{return{player:null,games:{},clientId:crypto.randomUUID()}}}
+if(!state.clientId)state.clientId=crypto.randomUUID();
+function save(){localStorage.setItem(LOCAL_KEY,JSON.stringify(state))}
+function ensure(p){state.games[p]??={};PEOPLE.filter(x=>x!==p).forEach(t=>state.games[p][t]??=Array.from({length:5},()=>({text:"",checked:false})));save()}
+function configured(){return window.APP_CONFIG&&APP_CONFIG.SUPABASE_URL&&!APP_CONFIG.SUPABASE_URL.includes("DEIN-")&&APP_CONFIG.SUPABASE_KEY&&!APP_CONFIG.SUPABASE_KEY.includes("DEIN-")}
+function renderPlayers(){$("players").innerHTML="";PEOPLE.forEach(n=>{const b=document.createElement("button");b.className="person";b.innerHTML=`<strong>${cap(n)}</strong><span>Als Spieler auswählen</span>`;b.onclick=()=>{state.player=n;ensure(n);save();render();syncAll()};$("players").appendChild(b)})}
+function render(){
+  if(!state.player){$("setup").classList.remove("hidden");$("game").classList.add("hidden");$("change").classList.add("hidden");$("reset").classList.add("hidden");renderPlayers();return}
+  ensure(state.player);$("setup").classList.add("hidden");$("game").classList.remove("hidden");$("change").classList.remove("hidden");$("reset").classList.remove("hidden");$("title").textContent=cap(state.player)+"s Bingo";renderTargets();progress();syncLabel();
+}
+function renderTargets(){
+  $("targets").innerHTML="";
+  PEOPLE.filter(t=>t!==state.player).forEach(target=>{
+    const card=document.createElement("section");card.className="target";
+    card.innerHTML=`<div class="target-head"><h3>${cap(target)}</h3><span class="counter">0 / 5</span></div><div class="words"></div><div class="done">${cap(target)} wurde vollständig entschlüsselt</div>`;
+    state.games[state.player][target].forEach((item,slot)=>{
+      const row=document.createElement("label");row.className="row"+(item.checked?" checked":"");
+      row.innerHTML=`<input class="check" type="checkbox" ${item.checked?"checked":""}><input class="word" maxlength="80" placeholder="z. B. „Ganz ehrlich …“" value="${esc(item.text)}">`;
+      const c=row.querySelector(".check"),i=row.querySelector(".word");
+      c.onchange=()=>{const before=complete(target);item.checked=c.checked;row.classList.toggle("checked",item.checked);save();updateCard(card,target);progress();queueSync(target,slot);if(!before&&complete(target))bingo(target)};
+      i.oninput=()=>{item.text=i.value;save();queueSync(target,slot)};
+      i.onblur=()=>syncSlot(target,slot);
+      card.querySelector(".words").appendChild(row);
+    });
+    $("targets").appendChild(card);updateCard(card,target)
+  })
+}
+function complete(t){return state.games[state.player][t].every(x=>x.checked)}
+function updateCard(card,t){const n=state.games[state.player][t].filter(x=>x.checked).length;card.querySelector(".counter").textContent=n+" / 5";card.classList.toggle("complete",n===5)}
+function progress(){const a=PEOPLE.filter(t=>t!==state.player).flatMap(t=>state.games[state.player][t]);const n=a.filter(x=>x.checked).length;$("total").textContent=`${n} / ${a.length}`;$("bar").style.width=(n/a.length*100)+"%"}
+function queueSync(target,slot){const key=target+"-"+slot;clearTimeout(pending.get(key));pending.set(key,setTimeout(()=>syncSlot(target,slot),700))}
+async function syncSlot(target,slot){
+  if(!configured()||!navigator.onLine){syncLabel();return}
+  const item=state.games[state.player][target][slot];
+  try{
+    const url=`${APP_CONFIG.SUPABASE_URL}/rest/v1/rpc/upsert_bingo_entry`;
+    const r=await fetch(url,{method:"POST",headers:{
+      "apikey":APP_CONFIG.SUPABASE_KEY,"Authorization":"Bearer "+APP_CONFIG.SUPABASE_KEY,
+      "Content-Type":"application/json"
+    },body:JSON.stringify({
+      p_client_id:state.clientId,
+      p_player:state.player,
+      p_target:target,
+      p_slot:slot,
+      p_word:item.text.trim(),
+      p_checked:item.checked
+    })});
+    if(!r.ok)throw new Error(await r.text());syncLabel(true)
+  }catch(e){console.warn(e);syncLabel(false)}
+}
+async function syncAll(){if(!state.player)return;for(const target of PEOPLE.filter(t=>t!==state.player))for(let slot=0;slot<5;slot++)await syncSlot(target,slot)}
+function syncLabel(success){
+  const el=$("syncStatus"),text=el.querySelector("span:last-child");
+  if(!configured()){el.classList.remove("online");text.textContent="Supabase noch nicht konfiguriert – nur lokal gespeichert";return}
+  if(!navigator.onLine){el.classList.remove("online");text.textContent="Offline – lokal gespeichert, Synchronisierung folgt";return}
+  if(success===false){el.classList.remove("online");text.textContent="Synchronisierung fehlgeschlagen – lokal gesichert";return}
+  el.classList.add("online");text.textContent=success?"Mit gemeinsamer Auswertung synchronisiert":"Online – Änderungen werden synchronisiert"
+}
+function bingo(t){$("modalTitle").textContent=cap(t)+"-Bingo!";$("modalText").textContent=`Alle fünf Vorhersagen für ${cap(t)} sind eingetroffen. Offiziell vollkommen berechenbar.`;$("modal").classList.remove("hidden")}
+$("close").onclick=()=>$("modal").classList.add("hidden");
+$("change").onclick=()=>{state.player=null;save();render()};
+$("reset").onclick=()=>{if(confirm("Deinen lokalen Spielstand wirklich löschen?")){delete state.games[state.player];ensure(state.player);render();syncAll()}};
+window.addEventListener("online",()=>{syncLabel();syncAll()});window.addEventListener("offline",()=>syncLabel());
+render();if(state.player)syncAll();
+</script>
+</body></html>
